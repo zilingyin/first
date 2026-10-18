@@ -11,4 +11,4 @@
 1. 启动 LM Studio 并加载模型，开启本地服务器（端口 1234）。
 2. 安装依赖：pip install -r requirements.txt（或手动安装 flask 等）。
 3. 运行应用：python app.py。
-4. 浏览器访问：http://localhost:5000。
+4. 浏览器访问：http://localhost:5000
