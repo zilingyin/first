@@ -45,20 +45,20 @@ CORS(app)  # 允许跨域（前端 5000 调用后端 5001 必需）
 # ---------- 配置项 ----------
 AGENT_URL = "http://localhost:5001"   # 智能体服务地址
 
-# YOLO 权重路径（绝对路径，避免目录嵌套问题）
-# 优先使用自定义训练权重，不存在则回退到官方预训练权重
-_CUSTOM_WEIGHTS = r"D:\ai-project\runs\detect\runs\detect\exp_yolov8n\weights\best.pt"
-_PRETRAINED_WEIGHTS = r"D:\ai-project\yolov8n.pt"
-
+# YOLO 权重路径（自动查找，优先自定义权重）
+_YOLO_CANDIDATES = [
+    r"D:\ai-project\runs\detect\exp_yolov8n\weights\best.pt",           # 自定义训练权重
+    r"D:\ai-project\runs\detect\runs\detect\exp_yolov8n\weights\best.pt",  # 嵌套目录（兼容）
+    r"D:\ai-project\yolov8n.pt",                                        # 预训练权重
+]
+YOLO_WEIGHTS = None
 if YOLO_AVAILABLE:
-    if os.path.exists(_CUSTOM_WEIGHTS):
-        YOLO_WEIGHTS = _CUSTOM_WEIGHTS
-    elif os.path.exists(_PRETRAINED_WEIGHTS):
-        YOLO_WEIGHTS = _PRETRAINED_WEIGHTS
-    else:
+    for _p in _YOLO_CANDIDATES:
+        if os.path.exists(_p):
+            YOLO_WEIGHTS = _p
+            break
+    if YOLO_WEIGHTS is None:
         YOLO_WEIGHTS = "yolov8n.pt"  # ultralytics 会自动下载
-else:
-    YOLO_WEIGHTS = None
 
 # ---------- YOLO 模型（懒加载，只在第一次请求时加载） ----------
 _yolo_model = None
