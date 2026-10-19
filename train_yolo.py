@@ -1,58 +1,72 @@
 """
-YOLO 训练脚本
-============
-选择 yolov8n 预训练权重，在 COCO128 上微调 50 轮。
-参数选择理由见下方注释。
+train_yolo.py —— YOLOv8 训练脚本
+=================================
+数据集：COCO128（80 类通用目标）
+硬件：RTX 4070 (8GB)
+参考：https://docs.ultralytics.com/modes/train/
 """
+
 from ultralytics import YOLO
 import torch
 
 def main():
-    # ---- 模型选择 ----
-    # yolov8n: 最小最快，适合 8GB 显存实时推理
-    # 如果追求精度可选 yolov8s（但推理慢 ~2x）
-    model = YOLO("yolov8n.pt")  # 首次运行自动下载
+    print("=" * 50)
+    print("  🚀 YOLOv8 训练开始")
+    print("=" * 50)
 
-    # ---- 训练 ----
+    # 检查 GPU
+    if torch.cuda.is_available():
+        print(f"  GPU: {torch.cuda.get_device_name(0)}")
+        print(f"  显存: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+    else:
+        print("  ⚠️ 未检测到 GPU，将使用 CPU 训练（会很慢）")
+
+    # 加载预训练模型
+    model = YOLO("yolov8n.pt")
+
+    # 开始训练
     results = model.train(
-        data="coco128.yaml",    # COCO128 内置数据集（128张图，80类）
-        # data="dataset/data.yaml",  # 自建数据集用这行
-
-        epochs=50,              # 50轮：COCO128 小数据集，50轮足够收敛
-                                # 再多会过拟合（128张图翻来覆去）
-
-        imgsz=640,              # 输入分辨率：640 是 YOLO 标准尺寸
-                                # 小了丢细节，大了显存爆炸
-
-        batch=8,                # 批次大小：RTX 4070 8GB 实测 batch=8 刚好
-                                # 如果 OOM 就降到 4
-
-        device=0,               # GPU 0（你的 RTX 4070）
-
-        workers=2,              # 数据加载线程：Windows 下设 2 避免卡死
-                                # Linux 可以设 4-8
-
-        project="runs/detect",  # 输出目录
-        name="exp_yolov8n",     # 实验名
-        exist_ok=True,          # 允许覆盖（方便调试）
-
-        patience=10,            # 早停：10轮无提升自动停
-                                # 防止浪费时间
-
-        save_period=10,         # 每10轮保存一次权重
-                                # 方便对比不同 epoch 的效果
-
-        verbose=True,           # 打印详细日志
+        data="coco128.yaml",     # 数据集配置（ultralytics 会自动下载）
+        epochs=50,               # 训练轮数（小数据集防过拟合）
+        batch=8,                 # 批次大小（RTX 4070 实测上限）
+        imgsz=640,               # 输入尺寸
+        device="0" if torch.cuda.is_available() else "cpu",
+        workers=4,               # 数据加载线程数
+        project="runs/detect",   # 输出项目目录
+        name="exp_yolov8n",      # 实验名称（输出到 runs/detect/exp_yolov8n/）
+        exist_ok=True,           # 允许覆盖同名目录
+        pretrained=True,         # 使用预训练权重
+        optimizer="auto",        # 自动选择优化器
+        verbose=True,            # 打印详细日志
+        patience=10,             # 早停：10 轮无提升则停止
+        save=True,               # 保存检查点
+        save_period=-1,          # 不按周期保存（只在最后保存）
+        cache=False,             # 不缓存数据集（节省内存）
+        amp=True,                # 自动混合精度（FP16，提速省显存）
+        lr0=0.01,               # 初始学习率
+        lrf=0.01,               # 最终学习率（lr0 * lrf）
+        momentum=0.937,         # SGD 动量
+        weight_decay=0.0005,    # 权重衰减
+        warmup_epochs=3.0,      # 热身轮数
+        warmup_momentum=0.8,    # 热身动量
+        warmup_bias_lr=0.1,     # 热身偏置学习率
+        box=7.5,                # 边界框损失权重
+        cls=0.5,                # 分类损失权重
+        dfl=1.5,                # DFL 损失权重
     )
 
-    # ---- 验证 ----
-    metrics = model.val()
-    print(f"mAP50-95: {metrics.box.map}")
-    print(f"mAP50: {metrics.box.map50}")
+    print("=" * 50)
+    print("  ✅ 训练完成！")
+    print(f"  权重路径: runs/detect/exp_yolov8n/weights/best.pt")
+    print(f"  训练曲线: runs/detect/exp_yolov8n/results.png")
+    print("=" * 50)
 
-    print("\n✅ 训练完成！")
-    print(f"   最佳权重: runs/detect/exp_yolov8n/weights/best.pt")
-    print(f"   最后权重: runs/detect/exp_yolov8n/weights/last.pt")
+    # 验证模型
+    print("\n📊 开始验证...")
+    metrics = model.val()
+    print(f"  mAP50: {metrics.box.map50:.4f}")
+    print(f"  mAP50-95: {metrics.box.map:.4f}")
+
 
 if __name__ == "__main__":
     main()
