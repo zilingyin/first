@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOLO 实时检测</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
@@ -18,40 +13,21 @@
             min-height: 100vh;
             padding: 20px;
         }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 8px;
-            font-size: 1.8rem;
-        }
-
-        .subtitle {
-            text-align: center;
-            opacity: 0.7;
-            margin-bottom: 24px;
-            font-size: 0.95rem;
-        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 8px; font-size: 1.8rem; }
+        .subtitle { text-align: center; opacity: 0.7; margin-bottom: 24px; font-size: 0.95rem; }
 
         .video-container {
             text-align: center;
             margin-bottom: 16px;
         }
-
         video, #resultImg img {
             border-radius: 12px;
             border: 2px solid rgba(255,255,255,0.2);
             max-width: 100%;
             display: none;
         }
-
-            video.active, #resultImg img.active {
-                display: inline-block;
-            }
+        video.active, #resultImg img.active { display: inline-block; }
 
         .placeholder {
             width: 100%;
@@ -65,11 +41,7 @@
             font-size: 1.1rem;
         }
 
-        .btn-group {
-            text-align: center;
-            margin: 20px 0;
-        }
-
+        .btn-group { text-align: center; margin: 20px 0; }
         .btn {
             background: #e94560;
             color: white;
@@ -81,16 +53,8 @@
             font-size: 1rem;
             transition: background 0.2s;
         }
-
-            .btn:hover {
-                background: #d93852;
-            }
-
-            .btn:disabled {
-                background: #666;
-                cursor: not-allowed;
-                opacity: 0.6;
-            }
+        .btn:hover { background: #d93852; }
+        .btn:disabled { background: #666; cursor: not-allowed; opacity: 0.6; }
 
         .status {
             text-align: center;
@@ -99,18 +63,9 @@
             border-radius: 6px;
             font-size: 0.9rem;
         }
-
-            .status.info {
-                background: rgba(52, 152, 219, 0.2);
-            }
-
-            .status.success {
-                background: rgba(46, 204, 113, 0.2);
-            }
-
-            .status.error {
-                background: rgba(231, 76, 60, 0.2);
-            }
+        .status.info { background: rgba(52, 152, 219, 0.2); }
+        .status.success { background: rgba(46, 204, 113, 0.2); }
+        .status.error { background: rgba(231, 76, 60, 0.2); }
 
         .results {
             background: rgba(255,255,255,0.1);
@@ -118,11 +73,7 @@
             padding: 20px;
             margin-top: 20px;
         }
-
-            .results h3 {
-                margin-bottom: 12px;
-            }
-
+        .results h3 { margin-bottom: 12px; }
         .detection-item {
             padding: 10px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -130,18 +81,9 @@
             justify-content: space-between;
             align-items: center;
         }
-
-            .detection-item:last-child {
-                border-bottom: none;
-            }
-
-        .detection-label {
-            font-weight: bold;
-        }
-
-        .detection-conf {
-            color: #2ecc71;
-        }
+        .detection-item:last-child { border-bottom: none; }
+        .detection-label { font-weight: bold; }
+        .detection-conf { color: #2ecc71; }
 
         .back {
             display: block;
@@ -151,10 +93,7 @@
             text-decoration: none;
             font-size: 1rem;
         }
-
-            .back:hover {
-                text-decoration: underline;
-            }
+        .back:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -204,123 +143,123 @@
         let isProcessing = false;
 
         function setStatus(msg, type = 'info') {
-        statusEl.textContent = msg;
-        statusEl.className = `status ${type}`;
+            statusEl.textContent = msg;
+            statusEl.className = `status ${type}`;
         }
 
         async function startCamera() {
-        try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 }
-        });
-        video.srcObject = stream;
-        video.classList.add('active');
-        placeholder.style.display = 'none';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                video.classList.add('active');
+                placeholder.style.display = 'none';
 
-        btnDetect.disabled = false;
-        btnRealtime.disabled = false;
-        btnCamera.disabled = true;
+                btnDetect.disabled = false;
+                btnRealtime.disabled = false;
+                btnCamera.disabled = true;
 
-        setStatus('✅ 摄像头已开启', 'success');
-        } catch (err) {
-        setStatus('❌ 无法访问摄像头: ' + err.message, 'error');
-        console.error(err);
-        }
+                setStatus('✅ 摄像头已开启', 'success');
+            } catch (err) {
+                setStatus('❌ 无法访问摄像头: ' + err.message, 'error');
+                console.error(err);
+            }
         }
 
         async function detectOnce() {
-        if (isProcessing) return;
-        if (!video.srcObject) {
-        setStatus('⚠️ 请先开启摄像头', 'error');
-        return;
-        }
+            if (isProcessing) return;
+            if (!video.srcObject) {
+                setStatus('⚠️ 请先开启摄像头', 'error');
+                return;
+            }
 
-        isProcessing = true;
-        btnDetect.disabled = true;
-        setStatus('⏳ 正在检测...', 'info');
+            isProcessing = true;
+            btnDetect.disabled = true;
+            setStatus('⏳ 正在检测...', 'info');
 
-        try {
-        // 将视频帧绘制到 canvas
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            try {
+                // 将视频帧绘制到 canvas
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // 转为 base64
-        const imageData = canvas.toDataURL('image/jpeg', 0.85);
+                // 转为 base64
+                const imageData = canvas.toDataURL('image/jpeg', 0.85);
 
-        // 发送到后端
-        const resp = await fetch('api/yolo/detect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageData })
-        });
+                // 发送到后端
+                const resp = await fetch('/api/yolo/detect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageData })
+                });
 
-        const data = await resp.json();
+                const data = await resp.json();
 
-        if (!resp.ok || data.error) {
-        throw new Error(data.error || `HTTP ${resp.status}`);
-        }
+                if (!resp.ok || data.error) {
+                    throw new Error(data.error || `HTTP ${resp.status}`);
+                }
 
-        // 显示检测结果图片
-        resultImg.innerHTML = `<img src="${data.image}" class="active" style="max-width:100%;border-radius:12px;">`;
-        video.classList.remove('active');
+                // 显示检测结果图片
+                resultImg.innerHTML = `<img src="${data.image}" class="active" style="max-width:100%;border-radius:12px;">`;
+                video.classList.remove('active');
 
-        // 显示检测列表
-        if (data.count > 0) {
-        let html = `<h3>检测结果（${data.count} 个目标）</h3>`;
-        data.detections.forEach(d => {
-        html += `
-        <div class="detection-item">
-        <span class="detection-label">${d.label}</span>
-        <span class="detection-conf">${(d.confidence * 100).toFixed(1)}%</span>
-        </div>
-        `;
-        });
-        resultsEl.innerHTML = html;
-        setStatus(`✅ 检测到 ${data.count} 个目标`, 'success');
-        } else {
-        resultsEl.innerHTML = '<h3>检测结果</h3><p style="opacity:0.7;">未检测到目标，请调整角度或光线后重试</p>';
-        setStatus('⚠️ 未检测到目标', 'info');
-        }
+                // 显示检测列表
+                if (data.count > 0) {
+                    let html = `<h3>检测结果（${data.count} 个目标）</h3>`;
+                    data.detections.forEach(d => {
+                        html += `
+                            <div class="detection-item">
+                                <span class="detection-label">${d.label}</span>
+                                <span class="detection-conf">${(d.confidence * 100).toFixed(1)}%</span>
+                            </div>
+                        `;
+                    });
+                    resultsEl.innerHTML = html;
+                    setStatus(`✅ 检测到 ${data.count} 个目标`, 'success');
+                } else {
+                    resultsEl.innerHTML = '<h3>检测结果</h3><p style="opacity:0.7;">未检测到目标，请调整角度或光线后重试</p>';
+                    setStatus('⚠️ 未检测到目标', 'info');
+                }
 
-        } catch (err) {
-        setStatus('❌ 检测失败: ' + err.message, 'error');
-        console.error(err);
-        } finally {
-        isProcessing = false;
-        if (realtimeTimer === null) {
-        btnDetect.disabled = false;
-        }
-        }
+            } catch (err) {
+                setStatus('❌ 检测失败: ' + err.message, 'error');
+                console.error(err);
+            } finally {
+                isProcessing = false;
+                if (realtimeTimer === null) {
+                    btnDetect.disabled = false;
+                }
+            }
         }
 
         function startRealtime() {
-        if (realtimeTimer) return;
+            if (realtimeTimer) return;
 
-        btnRealtime.disabled = true;
-        btnStop.disabled = false;
-        setStatus('▶️ 连续检测中...', 'info');
+            btnRealtime.disabled = true;
+            btnStop.disabled = false;
+            setStatus('▶️ 连续检测中...', 'info');
 
-        // 先检测一帧
-        detectOnce();
-        // 每 800ms 检测一次
-        realtimeTimer = setInterval(detectOnce, 800);
+            // 先检测一帧
+            detectOnce();
+            // 每 800ms 检测一次
+            realtimeTimer = setInterval(detectOnce, 800);
         }
 
         function stopRealtime() {
-        if (realtimeTimer) {
-        clearInterval(realtimeTimer);
-        realtimeTimer = null;
-        }
-        btnRealtime.disabled = false;
-        btnStop.disabled = true;
-        btnDetect.disabled = false;
+            if (realtimeTimer) {
+                clearInterval(realtimeTimer);
+                realtimeTimer = null;
+            }
+            btnRealtime.disabled = false;
+            btnStop.disabled = true;
+            btnDetect.disabled = false;
 
-        // 恢复视频画面
-        video.classList.add('active');
-        resultImg.innerHTML = '';
+            // 恢复视频画面
+            video.classList.add('active');
+            resultImg.innerHTML = '';
 
-        setStatus('⏹️ 已停止连续检测', 'info');
+            setStatus('⏹️ 已停止连续检测', 'info');
         }
     </script>
 </body>
