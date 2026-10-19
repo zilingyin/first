@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智能助手</title>
+    <style>
+        :root {
+            --primary-bg: #1a1a2e;
+            --chat-bg: #16213e;
+            --accent-color: #0f3460;
+            --text-color: #e94560;
+            --bot-msg-bg: #2a2a4a;
+            --user-msg-bg: #4a2a5a;
+            --btn-bg: #e94560;
+            --btn-hover: #d93852;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            width: 800px;
+            height: 600px;
+            background: rgba(22, 33, 62, 0.9);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 52, 96, 0.5);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #4caf50;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #4caf50;
+        }
+
+        .reset-btn {
+            background: var(--btn-bg);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+            .reset-btn:hover {
+                background: var(--btn-hover);
+            }
+
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .bot-msg {
+            background: var(--bot-msg-bg);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-msg {
+            background: var(--user-msg-bg);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .error-msg {
+            background: #5a2a2a;
+            color: #ff6b6b;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .tool-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            background: rgba(15, 52, 96, 0.5);
+            border-radius: 0 0 16px 16px;
+        }
+
+        .input-box {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+            .input-box::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+            }
+
+        .send-btn {
+            background: var(--btn-bg);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+            .send-btn:hover {
+                background: var(--btn-hover);
+            }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-box::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="header">
+            <div class="header-title">
+                <div class="status-dot"></div>
+                AI 智能助手
+            </div>
+            <button class="reset-btn" onclick="resetChat()">🔄 重置对话</button>
+        </div>
+
+        <div class="chat-box" id="chatBox">
+            <!-- 默认欢迎消息（localStorage 有数据时会被覆盖） -->
+            <div class="message bot-msg">
+                👋 <strong>你好！我是你的 AI 智能助手。</strong><br><br>
+                本地模型驱动 · 支持多轮对话 · 具备工具调用能力
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" class="input-box" id="userInput" placeholder="输入消息，按 Enter 发送（试试问『广州天河区天气』或『现在几点』）" onkeypress="handleKeyPress(event)">
+            <button class="send-btn" onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5001/api/chat";
+        const RESET_URL = "http://localhost:5001/api/reset";
+        const STORAGE_KEY = "chatHistory";
+        let sessionId = "default";
+
+        // ============ 页面加载 ============
+        window.onload = async () => {
+        // 1. 从 localStorage 恢复对话历史
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+        document.getElementById("chatBox").innerHTML = saved;
+        }
+
+        // 2. 检查后端健康状态
+        try {
+        const res = await fetch("http://localhost:5001/api/health");
+        const data = await res.json();
+        if (!data.model_online) {
+        appendMessage("⚠️ 警告：无法连接到 LM Studio，请确认模型已加载并开启 Server（端口 1234）", "error");
+        }
+        } catch (err) {
+        appendMessage("❌ 网络错误：无法连接到智能体服务 (5001)，请确保 agent.py 已启动。", "error");
+        }
+        };
+
+        // ============ 追加消息 + 自动保存 ============
+        function appendMessage(text, type) {
+        const chatBox = document.getElementById("chatBox");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${type}-msg`;
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 保存到 localStorage
+        localStorage.setItem(STORAGE_KEY, chatBox.innerHTML);
+        }
+
+        // ============ 发送消息 ============
+        async function sendMessage() {
+        const input = document.getElementById("userInput");
+        const text = input.value.trim();
+        if (!text) return;
+
+        // 显示用户消息
+        appendMessage(text, "user");
+        input.value = "";
+
+        try {
+        const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+        message: text,
+        session_id: sessionId
+        })
+        });
+
+        if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        let botReply = data.reply;
+        if (data.tools_used && data.tools_used.length > 0) {
+        botReply += `<br><span class="tool-badge">🔧 工具调用: ${data.tools_used.join(', ')}</span>`;
+        }
+
+        appendMessage(botReply, "bot");
+
+        } catch (error) {
+        console.error("Fetch error:", error);
+        appendMessage("❌ 网络错误: Failed to fetch<br>请检查后端服务或 LM Studio 状态。", "error");
+        }
+        }
+
+        // ============ 重置对话 ============
+        async function resetChat() {
+        // 1. 清空 localStorage
+        localStorage.removeItem(STORAGE_KEY);
+
+        // 2. 恢复默认欢迎消息
+        document.getElementById("chatBox").innerHTML = `
+        <div class="message bot-msg">
+        👋 <strong>你好！我是你的 AI 智能助手。</strong><br><br>
+        本地模型驱动 · 支持多轮对话 · 具备工具调用能力
+        </div>
+        `;
+
+        // 3. 通知后端重置会话
+        try {
+        await fetch(RESET_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId })
+        });
+        } catch (error) {
+        console.error("Reset failed:", error);
+        }
+        }
+
+        // ============ 回车发送 ============
+        function handleKeyPress(e) {
+        if (e.key === "Enter") {
+        sendMessage();
+        }
+        }
+    </script>
+
+</body>
+</html>
