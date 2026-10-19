@@ -2,14 +2,22 @@
 YOLO 实时推理 - Python 快速实现
 ===============================
 参考 ultralytics 官方文档，不自研。
-按 'q' 退出。
+按 'q' 退出，按 's' 保存当前帧。
 """
 import cv2
 from ultralytics import YOLO
 
+
 def main():
-    # 加载训练好的权重
-    model_path = "runs/detect/exp_yolov8n/weights/best.pt"
+    # 加载训练好的权重（使用绝对路径，避免目录嵌套导致找不到）
+    model_path = r"D:\ai-project\runs\detect\runs\detect\exp_yolov8n\weights\best.pt"
+
+    # 如果自定义权重不存在，回退到官方预训练权重
+    if not __import__('os').path.exists(model_path):
+        print(f"⚠️ 自定义权重不存在: {model_path}")
+        model_path = "yolov8n.pt"
+        print(f"   将使用官方预训练权重: {model_path}")
+
     model = YOLO(model_path)
 
     # 打开摄像头
@@ -26,9 +34,12 @@ def main():
     print("   按 'q' 退出 | 按 's' 保存当前帧")
     print(f"   模型: {model_path}")
 
+    prev_tick = cv2.getTickCount()
+
     while True:
         ret, frame = cap.read()
         if not ret:
+            print("❌ 读取摄像头帧失败")
             break
 
         # ---- 推理 ----
@@ -39,9 +50,11 @@ def main():
         # ---- 绘制结果 ----
         annotated = results[0].plot()
 
-        # ---- 显示 FPS ----
-        fps_text = f"FPS: {cv2.getTickFrequency() / (cv2.getTickCount() + 1e-5):.0f}"
-        cv2.putText(annotated, fps_text, (10, 30),
+        # ---- 计算并显示 FPS ----
+        curr_tick = cv2.getTickCount()
+        fps = cv2.getTickFrequency() / (curr_tick - prev_tick)
+        prev_tick = curr_tick
+        cv2.putText(annotated, f"FPS: {fps:.0f}", (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
         cv2.imshow("YOLO Real-time Detection", annotated)
@@ -50,12 +63,14 @@ def main():
         if key == ord('q'):
             break
         elif key == ord('s'):
-            cv2.imwrite(f"capture_{cv2.getTickCount()}.jpg", annotated)
-            print("   📸 已保存当前帧")
+            filename = f"capture_{int(curr_tick)}.jpg"
+            cv2.imwrite(filename, annotated)
+            print(f"   📸 已保存: {filename}")
 
     cap.release()
     cv2.destroyAllWindows()
     print("✅ 已退出")
+
 
 if __name__ == "__main__":
     main()
